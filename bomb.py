@@ -6,7 +6,7 @@ import concurrent.futures
 
 CONFIG_FILE = "config.json"
 
-# ANSI Color Codes
+# ANSI Color Codes for Termux
 R = '\033[31m' # Red
 G = '\033[32m' # Green
 C = '\033[36m' # Cyan
@@ -44,23 +44,26 @@ def send_message(url, payload, i):
         data = response.json()
         
         if response.status_code == 200:
-            print(f"{G}[+] Message {i} sent!{W}")
+            print(f"{G}[+] Message {i} sent successfully!{W}")
         elif response.status_code == 429:
             retry_after = data.get("parameters", {}).get("retry_after", 5)
             print(f"{R}[!] Telegram Rate Limit! Sleeping for {retry_after}s...{W}")
             time.sleep(retry_after)
-            # ከጥበቃ በኋላ ድጋሚ ይሞክራል
+            
+            # Retry after sleeping
             requests.post(url, json=payload)
             print(f"{Y}[~] Message {i} sent after sleep.{W}")
         else:
-            print(f"{R}[-] Failed to send {i}.{W}")
+            error_msg = data.get('description', 'Unknown Error')
+            print(f"{R}[-] Failed to send {i}: {error_msg}{W}")
     except Exception as e:
-        print(f"{R}[!] Error on message {i}: {e}{W}")
+        print(f"{R}[!] Network Error on message {i}: {e}{W}")
 
 def main():
     show_banner()
     config = load_config()
 
+    # Handle Bot Token
     if "bot_token" not in config:
         print(f"{Y}[!] Bot token not found.{W}")
         bot_token = input(f"{C}Enter your Telegram Bot Token: {W}").strip()
@@ -71,26 +74,33 @@ def main():
         bot_token = config["bot_token"]
         print(f"{G}[+] Loaded saved Bot Token.{W}\n")
 
+    # Get Target and Message
     chat_id = input(f"{C}Enter Target Chat ID: {W}").strip()
     message = input(f"{C}Enter Message to send: {W}").strip()
     
-    try:
-        total_msgs = int(input(f"{C}Enter number of messages to send (e.g., 1000): {W}").strip())
-    except ValueError:
-        print(f"{R}[!] Invalid number. Defaulting to 1000 messages.{W}")
-        total_msgs = 1000
+    # Get Custom Message Limit
+    while True:
+        try:
+            user_input = input(f"{C}Enter the exact number of messages to send (e.g., 1000000): {W}").strip()
+            total_msgs = int(user_input)
+            if total_msgs > 0:
+                break
+            else:
+                print(f"{R}[!] Please enter a number greater than 0.{W}")
+        except ValueError:
+            print(f"{R}[!] Invalid input. Please type a valid number without commas or letters.{W}")
 
-    print(f"\n{Y}[*] Starting EXTREME FAST Attack on {chat_id}...{W}\n")
+    print(f"\n{Y}[*] Starting EXTREME FAST Attack on {chat_id} with {total_msgs} messages...{W}")
+    print(f"{Y}[*] Press Ctrl+C at any time to stop.{W}\n")
     
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     
-    # ቁጥር (1, 2, 3...) ከፅሁፉ ጋር እንዳይላክ ተደርጓል
     payload = {
         "chat_id": chat_id,
         "text": message
     }
     
-    # Multi-threading በመጠቀም በአንድ ጊዜ እስከ 20 መልእክቶችን ወደ ሰርቨሩ ይልካል
+    # Send messages using Multi-threading for maximum speed
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         for i in range(1, total_msgs + 1):
             executor.submit(send_message, url, payload, i)
@@ -101,4 +111,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print(f"\n{R}[!] Program Exited.{W}")
+        print(f"\n{R}[!] Program Exited by User.{W}")
