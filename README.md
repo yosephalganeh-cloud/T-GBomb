@@ -34,4 +34,4 @@ cd T-GBomb
 pip install requests
 
 # 6. Run the tool
-python app.py
+python bomb.py
