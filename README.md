@@ -25,7 +25,7 @@ pkg update && pkg upgrade -y
 pkg install python git -y
 
 # 3. Clone this repository (Replace with your actual GitHub link)
-git clone https://github.com/yosephalganeh-cloud/T-G-Bomb.git)
+git clone https://github.com/yosephalganeh-cloud/T-G-Bomb.git
 
 # 4. Open the directory
 cd T-G-Bomb
